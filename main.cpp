@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <string>
+#include <set>
 
 using std::cin;
 using std::cout;
@@ -105,8 +106,23 @@ int main(int argc, char* argv[])
   }
 
   //
+  // Build the program graph:
+  //
+  struct TokenQueue* tokens = parser_parse(input);
+  struct STMT* program = programgraph_build(tokens);
+
+  //
+  // Initialize program memory:
+  //
+  struct RAM* memory = ram_init();
+
+  //
   // command loop:
   //
+  //
+  // Store breakpoint line numbers:
+  //
+  std::set<int> breakpoints;
   string cmd;
 
   while (true) {
@@ -121,12 +137,63 @@ int main(int argc, char* argv[])
       //
       break;
     }
-    else if (cmd == "h") { 
+    else if (cmd == "h") {
       help_command();
     }
-    else {
-      cout << "unknown command" << endl;
+    else if (cmd == "pg") {
+      programgraph_print(program);
     }
+    else if (cmd == "sm") {
+      ram_print(memory);
+    }
+    else if (cmd == "b") {
+      int line;
+      cin >> line;
+
+      if (breakpoints.count(line) > 0) {
+        cout << "breakpoint exists" << endl;
+      }
+      else {
+        breakpoints.insert(line);
+        cout << "breakpoint set" << endl;
+      }
+    }
+    else if (cmd == "rb") {
+      int line;
+      cin >> line;
+
+      if (breakpoints.erase(line) > 0) {
+        cout << "breakpoint removed" << endl;
+      }
+      else {
+        cout << "no such breakpoint" << endl;
+      }
+    }
+    else if (cmd == "cb") {
+      breakpoints.clear();
+      cout << "all breakpoints removed" << endl;
+    }
+    else if (cmd == "lb") {
+      if (breakpoints.empty()) {
+        cout << "breakpoints: none" << endl;
+      }
+      else {
+        cout << "breakpoints: ";
+
+        bool first = true;
+
+        for (int line : breakpoints) {
+          if (!first) {
+            cout << ", ";
+          }
+
+          cout << line;
+          first = false;
+        }
+
+        cout << endl;
+      }
+}
 
   }//while
 
@@ -135,6 +202,10 @@ int main(int argc, char* argv[])
   //
   cout << endl;
   cout << "** Done **" << endl;
+
+  ram_destroy(memory);
+  programgraph_destroy(program);
+  tokenqueue_destroy(tokens);
 
   fclose(input);
 
