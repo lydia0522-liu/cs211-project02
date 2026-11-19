@@ -30,7 +30,8 @@ $RECYCLE.BIN/
 __MACOSX/
 .AppleDouble
 .LSOverride
-Icon[]
+Icon[
+]
 
 # Thumbnails
 ._*
@@ -52,3 +53,7 @@ Temporary Items
 .apdisk
 
 **/.DS_Store
+
+# Generated build files
+a.out
+nupython.o
