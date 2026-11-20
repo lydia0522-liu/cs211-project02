@@ -43,11 +43,12 @@ extern "C" {
  * @param cur denotes stmt where to break program graph
  * @return struct PG_LINKS that contains saved copies of broken links
  */
+
 struct PG_LINKS {
-  struct STMT* next;
-  struct STMT* loop_body;
-  struct STMT* true_path;
-  struct STMT* false_path;
+    struct STMT* next;
+    struct STMT* loop_body;
+    struct STMT* true_path;
+    struct STMT* false_path;
 };
 
 struct PG_LINKS break_pg(struct STMT* cur);
@@ -70,4 +71,6 @@ struct PG_LINKS break_pg(struct STMT* cur);
  * @param cur denotes stmt where to repair program graph
  * @param struct PG_LINKS containing saved copies of broken links
  */
+
+// restore the original graph
 void repair_pg(struct STMT* cur, struct PG_LINKS links);

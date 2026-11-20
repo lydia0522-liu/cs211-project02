@@ -62,6 +62,68 @@ void help_command()
   cout << "w -> what line will execute next?" << endl;
 }
 
+void where_command(struct STMT* cur)
+{
+    if (cur == nullptr)
+    {
+        cout << "execution has completed" << endl;
+        return;
+    }
+    // break the graph 
+    struct PG_LINKS links = break_pg(cur);
+    programgraph_print(cur);
+    repair_pg(cur, links);
+}
+
+struct STMT* get_next_stmt(struct STMT* cur)
+{
+  if (cur == nullptr) return nullptr;
+
+  if (cur->stmt_type == STMT_ASSIGNMENT) {
+    return cur->types.assignment->next_stmt;
+  }
+  else if (cur->stmt_type == STMT_FUNCTION_CALL) {
+    return cur->types.function_call->next_stmt;
+  }
+  else if (cur->stmt_type == STMT_PASS) {
+    return cur->types.pass->next_stmt;
+  }
+
+  return nullptr;
+}
+
+
+void step_command(struct STMT*& cur, struct RAM* memory)
+{
+  if (cur == nullptr) {
+    cout << "execution has completed" << endl;
+    return;
+  }
+
+  // if and while handled later
+  if (cur->stmt_type == STMT_IF_THEN_ELSE ||
+      cur->stmt_type == STMT_WHILE_LOOP) {
+    return;
+  }
+
+  struct STMT* next = get_next_stmt(cur);
+  struct PG_LINKS links = break_pg(cur);
+
+  string line;
+  getline(cin, line);
+
+  struct ExecuteResult result = execute(cur, memory);
+  repair_pg(cur, links);
+
+  if (result.Success) {
+    cur = next;
+    if (cur == nullptr) {
+      cout << "program completed" << endl;
+    }
+  }
+}
+
+
 
 /**
   * @brief main
@@ -109,8 +171,20 @@ int main(int argc, char* argv[])
   // Build the program graph:
   //
   struct TokenQueue* tokens = parser_parse(input);
-  struct STMT* program = programgraph_build(tokens);
+  if (tokens == nullptr) {
+    fclose(input);
+    return 0;
+  }
 
+  struct STMT* program = programgraph_build(tokens);
+  if (program == nullptr) {
+    tokenqueue_destroy(tokens);
+    fclose(input);
+    return 0;
+  }
+
+// current statement, starts at the first one
+  struct STMT* cur = program;
   //
   // Initialize program memory:
   //
@@ -139,6 +213,12 @@ int main(int argc, char* argv[])
     }
     else if (cmd == "h") {
       help_command();
+    }
+    else if (cmd == "w") {
+      where_command(cur);
+    }
+    else if (cmd == "s") {
+      step_command(cur, memory);
     }
     else if (cmd == "pg") {
       programgraph_print(program);
@@ -194,7 +274,9 @@ int main(int argc, char* argv[])
         cout << endl;
       }
 }
-
+else {
+  cout << "unknown command" << endl;
+}
   }//while
 
   //
